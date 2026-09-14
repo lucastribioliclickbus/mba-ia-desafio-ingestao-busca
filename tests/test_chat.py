@@ -58,7 +58,9 @@ def test_missing_configuration_stops_the_cli_with_an_error(
     monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
 ) -> None:
     def explode() -> None:
-        raise ConfigurationError("Variável de ambiente obrigatória ausente ou vazia: OPENAI_API_KEY")
+        raise ConfigurationError(
+            "Variável de ambiente obrigatória ausente ou vazia: OPENAI_API_KEY"
+        )
 
     monkeypatch.setattr(chat, "search_prompt", explode)
 
