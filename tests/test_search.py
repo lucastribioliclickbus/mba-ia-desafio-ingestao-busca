@@ -67,6 +67,6 @@ def test_chain_sends_the_retrieved_context_and_the_question_to_the_llm(
     response = search.search_prompt().invoke("Qual o faturamento?")
 
     assert response == "O faturamento foi de 10 milhões de reais."
-    assert store.calls == [("Qual o faturamento?", 10)]
+    assert store.calls == [("Qual o faturamento?", SEARCH_RESULTS)]
     assert "CONTEXTO:\nO faturamento foi de 10 milhões." in prompts[0]
     assert "PERGUNTA DO USUÁRIO:\nQual o faturamento?" in prompts[0]

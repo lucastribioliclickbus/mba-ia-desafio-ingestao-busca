@@ -120,20 +120,27 @@ def test_provider_failure_is_reported_and_the_chat_keeps_running(
 
 
 def database_down() -> OperationalError:
-    return OperationalError("SELECT 1", {}, ConnectionRefusedError("recusada"))
+    return OperationalError(
+        "SELECT 1",
+        {},
+        ConnectionRefusedError(
+            "connection to postgresql+psycopg://postgres:postgres@localhost:5432/rag refused"
+        ),
+    )
 
 
 def test_database_down_mid_chat_is_reported_without_leaking_the_url(
     monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
 ) -> None:
     chain = FailingOnceChain(database_down())
-    pending: Iterator[str] = iter(["primeira", "sair"])
+    pending: Iterator[str] = iter(["primeira", "segunda", "sair"])
     monkeypatch.setattr(chat, "search_prompt", lambda: chain)
     monkeypatch.setattr("builtins.input", lambda _: next(pending))
 
     chat.main()
 
     error_output = capsys.readouterr().err
+    assert chain.questions == ["primeira", "segunda"]
     assert "docker compose up -d" in error_output
     assert "postgres:postgres" not in error_output
 
