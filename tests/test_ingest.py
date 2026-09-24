@@ -5,11 +5,13 @@ from pathlib import Path
 import pytest
 from langchain_core.documents import Document
 
+import ingest
 from ingest import (
     CHUNK_OVERLAP,
     CHUNK_SIZE,
     build_splitter,
     chunk_ids,
+    ingest_pdf,
     load_chunks,
     without_empty_metadata,
 )
@@ -68,3 +70,40 @@ def test_challenge_pdf_produces_chunks() -> None:
     assert chunks
     assert all(chunk.page_content.strip() for chunk in chunks)
     assert all(len(chunk.page_content) <= CHUNK_SIZE for chunk in chunks)
+
+
+class RecordingVectorStore:
+    def __init__(self) -> None:
+        self.documents: list[Document] = []
+        self.ids: list[str] = []
+
+    def add_documents(self, documents: list[Document], ids: list[str]) -> list[str]:
+        self.documents.extend(documents)
+        self.ids.extend(ids)
+        return ids
+
+
+@pytest.mark.skipif(not DOCUMENT_PDF.is_file(), reason="document.pdf ausente")
+def test_ingestion_stores_every_chunk_with_a_stable_id(monkeypatch: pytest.MonkeyPatch) -> None:
+    store = RecordingVectorStore()
+    monkeypatch.setenv("PDF_PATH", "document.pdf")
+    monkeypatch.setattr(ingest, "build_vector_store", lambda: store)
+
+    ingest_pdf()
+
+    assert store.documents
+    assert store.ids == chunk_ids("document.pdf", len(store.documents))
+
+
+def test_pdf_without_text_is_rejected(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    store = RecordingVectorStore()
+    blank_pdf = tmp_path / "vazio.pdf"
+    blank_pdf.touch()
+    monkeypatch.setenv("PDF_PATH", str(blank_pdf))
+    monkeypatch.setattr(ingest, "load_chunks", lambda _: [])
+    monkeypatch.setattr(ingest, "build_vector_store", lambda: store)
+
+    with pytest.raises(ValueError, match="Nenhum texto"):
+        ingest_pdf()
+
+    assert store.documents == []
