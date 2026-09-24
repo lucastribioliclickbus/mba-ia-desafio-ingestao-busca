@@ -1,7 +1,11 @@
 from __future__ import annotations
 
+import pytest
 from langchain_core.documents import Document
+from langchain_core.prompt_values import PromptValue
+from langchain_core.runnables import RunnableLambda
 
+import search
 from search import PROMPT_TEMPLATE, SEARCH_RESULTS, format_context, retrieve_context
 
 REFUSAL = "Não tenho informações necessárias para responder sua pergunta."
@@ -45,3 +49,24 @@ def test_prompt_carries_the_rules_and_both_placeholders() -> None:
     assert "{pergunta}" in PROMPT_TEMPLATE
     assert "Responda somente com base no CONTEXTO." in PROMPT_TEMPLATE
     assert REFUSAL in PROMPT_TEMPLATE
+
+
+def test_chain_sends_the_retrieved_context_and_the_question_to_the_llm(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    store = RecordingStore([(Document(page_content="O faturamento foi de 10 milhões."), 0.1)])
+    prompts: list[str] = []
+
+    def answer(prompt: PromptValue) -> str:
+        prompts.append(prompt.to_string())
+        return "O faturamento foi de 10 milhões de reais."
+
+    monkeypatch.setattr(search, "build_vector_store", lambda: store)
+    monkeypatch.setattr(search, "build_llm", lambda: RunnableLambda(answer))
+
+    response = search.search_prompt().invoke("Qual o faturamento?")
+
+    assert response == "O faturamento foi de 10 milhões de reais."
+    assert store.calls == [("Qual o faturamento?", 10)]
+    assert "CONTEXTO:\nO faturamento foi de 10 milhões." in prompts[0]
+    assert "PERGUNTA DO USUÁRIO:\nQual o faturamento?" in prompts[0]
