@@ -69,6 +69,10 @@ RESPOSTA: Não tenho informações necessárias para responder sua pergunta.
 
 Digite `sair` (ou `Ctrl+D`) para encerrar.
 
+Se a chamada ao provedor falhar no meio da conversa — limite do plano gratuito, chave inválida, rede — o chat mostra
+o erro e continua esperando a próxima pergunta. Com o banco fora do ar, ele pede para subir o Postgres com
+`docker compose up -d`.
+
 ## Como funciona
 
 | Arquivo | Responsabilidade |
