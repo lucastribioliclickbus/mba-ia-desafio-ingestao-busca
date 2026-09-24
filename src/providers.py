@@ -4,9 +4,12 @@ import os
 from pathlib import Path
 
 from dotenv import load_dotenv
+from google.api_core.exceptions import GoogleAPIError
 from langchain_core.embeddings import Embeddings
 from langchain_core.language_models import BaseChatModel
+from langchain_google_genai._common import GoogleGenerativeAIError
 from langchain_postgres import PGVector
+from openai import APIError
 from pydantic import SecretStr
 
 load_dotenv()
@@ -16,6 +19,7 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 OPENAI = "openai"
 GOOGLE = "google"
 SUPPORTED_PROVIDERS = (OPENAI, GOOGLE)
+PROVIDER_ERRORS = (APIError, GoogleAPIError, GoogleGenerativeAIError)
 
 DEFAULT_OPENAI_EMBEDDING_MODEL = "text-embedding-3-small"
 DEFAULT_OPENAI_CHAT_MODEL = "gpt-4o-mini"

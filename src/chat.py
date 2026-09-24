@@ -2,16 +2,12 @@ from __future__ import annotations
 
 import sys
 
-from google.api_core.exceptions import GoogleAPIError
-from langchain_google_genai._common import GoogleGenerativeAIError
-from openai import APIError
 from sqlalchemy.exc import OperationalError
 
-from providers import ConfigurationError
+from providers import PROVIDER_ERRORS, ConfigurationError
 from search import search_prompt
 
 EXIT_COMMANDS = frozenset({"sair", "exit", "quit"})
-PROVIDER_ERRORS = (APIError, GoogleAPIError, GoogleGenerativeAIError)
 DATABASE_UNAVAILABLE = (
     "Banco de dados indisponível. Suba o Postgres com 'docker compose up -d' "
     "e confira DATABASE_URL no .env."
